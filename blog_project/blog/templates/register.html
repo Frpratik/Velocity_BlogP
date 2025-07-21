@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="container">
+
+  <h1>Register</h1>
+
+  <form id="registerForm">
+    <label>Username</label>
+    <input name="username" required>
+    
+    <label>Email</label>
+    <input name="email" type="email" required>
+    
+    <label>Password</label>
+    <input name="password" type="password" required>
+    
+    <button type="submit">Register</button>
+  </form>
+
+  <p style="text-align: center; margin-top: 15px;">
+    Already have an account? <a href="/login/" class="link">Login here</a>
+  </p>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = e.target.username.value;
+      const email = e.target.email.value;
+      const password = e.target.password.value;
+
+      const res = await fetch('/api/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+        localStorage.setItem('username', username); 
+        alert('Registered successfully!');
+        window.location.href = '/login';
+      } else {
+        alert('Something went wrong!');
+      }
+    });
+
+  </script>
+</body>
+</html>

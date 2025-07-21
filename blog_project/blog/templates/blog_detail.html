@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blog Details</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/script.js"></script>
+</head>
+<body class="container">
+  <nav>
+    <a href="/">Home</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </nav>
+
+  <div id="blog"></div>
+  
+  <br><hr><br>
+
+  <h3>Comments</h3>
+  <div id="comments"></div>
+
+  <div id="addCommentBox" style="margin-top: 20px;">
+    <h4>Add a Comment</h4>
+    <textarea id="commentContent" placeholder="Write your comment..."></textarea>
+    <button onclick="addComment()" class="btn">Submit Comment</button>
+  </div>
+
+  <script>
+    const pk = "{{ pk }}";
+    const token = localStorage.getItem('access');
+    const loggedInUser = localStorage.getItem('username');
+
+    async function loadBlog() {
+      const res = await fetch(`/api/blogs/${pk}/`);
+      const blog = await res.json();
+      document.getElementById('blog').innerHTML = `
+        <h2>${blog.title}</h2>
+        <p><strong>Author:</strong> ${capitalize(blog.author_username)}</p>
+        <p>${blog.content}</p>
+      `;
+
+      loadComments(blog.comments);
+    }
+
+    function loadComments(comments) {
+      const commentsContainer = document.getElementById('comments');
+      commentsContainer.innerHTML = '';
+
+      if (comments.length === 0) {
+        commentsContainer.innerHTML = '<p>No comments yet.</p>';
+      } else {
+        comments.forEach(comment => {
+          commentsContainer.innerHTML += `
+            <div class="blog-card">
+              <p>${comment.content}</p>
+              <small>— ${capitalize(comment.commenter_username)}</small>
+            </div>
+          `;
+        });
+      }
+    }
+
+    async function addComment() {
+      if (!token) {
+        alert('Please login to comment.');
+        window.location.href = '/login/';
+        return;
+      }
+      const content = document.getElementById('commentContent').value.trim();
+      if (!content) {
+        alert('Write something first!');
+        return;
+      }
+
+      const res = await fetch('/api/comments/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: content,
+          blog: pk
+        })
+      });
+
+      if (res.status === 201) {
+        alert('Comment added!');
+        location.reload();
+      } else {
+        alert('Failed to add comment.');
+      }
+    }
+
+    loadBlog();
+  </script>
+</body>
+</html>

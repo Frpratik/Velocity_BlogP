@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Blog Home</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/script.js"></script>
+</head>
+<body class="container">
+
+  <header class="header">
+    <h1>My Blog</h1>
+    <nav>
+      <a href="{% url 'blog_create' %}" class="btn">Create New Post</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <div style="margin-bottom: 20px;">
+    <input type="text" id="searchInput" placeholder="Search blogs..." style="padding: 8px; width: 70%;">
+    <button onclick="startSearch()" class="btn">Search</button>
+  </div>
+
+  <div id="blogs"></div>
+
+  <p id="noResults" style="display: none; color: #888; margin-top: 20px;">No results found.</p>
+
+  <button id="loadMoreBtn" class="btn">Load More</button>
+
+  <script>
+    let page = 1;
+    let currentQuery = '';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadBlogs();
+
+      document.getElementById("loadMoreBtn").addEventListener("click", () => {
+        page++;
+        loadBlogs();
+      });
+    });
+
+    async function loadBlogs() {
+      const queryParam = currentQuery ? `&search=${encodeURIComponent(currentQuery)}` : '';
+      const res = await fetch(`/api/blogs/?page=${page}${queryParam}`);
+      const data = await res.json();
+      const blogs = data.results;
+
+      const loggedInUser = localStorage.getItem('username');
+      const container = document.getElementById('blogs');
+
+      // if first page and no results => show "No results"
+      if (page === 1 && blogs.length === 0) {
+        document.getElementById('noResults').style.display = 'block';
+        document.getElementById("loadMoreBtn").style.display = "none";
+      } else {
+        document.getElementById('noResults').style.display = 'none';
+      }
+
+      blogs.forEach(blog => {
+        let controls = '';
+        if (blog.author_username === loggedInUser) {
+          controls = `
+            <a href="/update/${blog.id}/" class="btn">Update</a>
+            <a href="/delete/${blog.id}/" class="btn btn-delete">Delete</a>
+          `;
+        }
+
+        container.innerHTML += `
+          <div class="blog-card">
+            <h2>${blog.title}</h2>
+            <p><strong>Author:</strong> ${capitalize(blog.author_username)}</p>
+            <p>${blog.content.substring(0, 200)}...</p>
+            <a href="/blog/${blog.id}/" class="btn">Read More</a>
+            ${controls}
+          </div>
+        `;
+      });
+
+      // hide Load More if no more pages
+      if (!data.next) {
+        document.getElementById("loadMoreBtn").style.display = "none";
+      } else {
+        document.getElementById("loadMoreBtn").style.display = "block";
+      }
+    }
+
+    function startSearch() {
+      page = 1; 
+      currentQuery = document.getElementById('searchInput').value.trim();
+      document.getElementById('blogs').innerHTML = ''; 
+      loadBlogs();
+    }
+  </script>
+</body>
+</html>

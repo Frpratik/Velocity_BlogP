@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Update Blog</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/script.js"></script>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/">Home</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+
+    <h1>Update Blog</h1>
+    <form id="updateForm">
+      <input name="title" placeholder="Title" required>
+      <textarea name="content" placeholder="Content"></textarea>
+
+      <label>Status</label>
+      <select name="status" required>
+        <option value="draft">Draft</option>
+        <option value="published">Published</option>
+      </select>
+
+      <button type="submit">Update</button>
+    </form>
+  </div>
+
+  <script>
+    const pk = "{{ pk }}";
+    const token = localStorage.getItem('access');
+
+    async function loadBlog() {
+      const res = await fetch(`/api/blogs/${pk}/`);
+      const blog = await res.json();
+      document.querySelector('input[name="title"]').value = blog.title;
+      document.querySelector('textarea[name="content"]').value = blog.content;
+      document.querySelector('select[name="status"]').value = blog.status;  // ✅ load status
+    }
+    loadBlog();
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        title: e.target.title.value,
+        content: e.target.content.value,
+        status: e.target.status.value
+      };
+      const res = await fetch(`/api/blogs/${pk}/update/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data)
+      });
+      if (res.status === 200) {
+        alert('Updated!');
+        window.location.href = '/';
+      } else {
+        alert('Error updating.');
+      }
+    });
+  </script>
+</body>
+</html>
